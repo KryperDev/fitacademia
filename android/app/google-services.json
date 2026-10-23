@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "248680139837",
+    "project_id": "fitacademia-9fe62",
+    "storage_bucket": "fitacademia-9fe62.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:248680139837:android:405b6714184cae5d0fae54",
+        "android_client_info": {
+          "package_name": "br.com.fitacademia.fitacademia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGGDCHrhvRaWAQgqhp6MYR9cS7GHeLaEU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

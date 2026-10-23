@@ -1,0 +1,25 @@
+﻿# Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+
+# Firebase
+firebase_options.dart
+.google-services/
+GoogleService-Info.plist
+.firebase/
+functions/node_modules/
+functions/lib/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
