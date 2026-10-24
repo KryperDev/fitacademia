@@ -1,10 +1,12 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/empty_state.dart';
+import 'auth_controller.dart';
 
-class PlaceholderPage extends StatelessWidget {
+class PlaceholderPage extends ConsumerWidget {
   final String title;
   final String description;
   final IconData icon;
@@ -19,11 +21,18 @@ class PlaceholderPage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
-        actions: actions,
+        actions: [
+          ...actions,
+          IconButton(
+            tooltip: 'Sair',
+            icon: const Icon(Icons.logout),
+            onPressed: () => ref.read(authControllerProvider.notifier).signOut(),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -60,7 +69,6 @@ class NotFoundPage extends StatelessWidget {
   }
 }
 
-/// Pequeno container usado nas páginas placeholder para indicar o papel previsto.
 class RoleBadge extends StatelessWidget {
   final String label;
   final Color color;
@@ -87,7 +95,6 @@ class RoleBadge extends StatelessWidget {
   }
 }
 
-/// Widget auxiliar para exibir a rota atual (útil durante o desenvolvimento).
 class RouteDebugChip extends StatelessWidget {
   final String route;
 

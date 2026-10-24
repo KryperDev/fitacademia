@@ -1,9 +1,11 @@
-﻿import 'package:firebase_auth/firebase_auth.dart';
+﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/admin/presentation/admin_dashboard_page.dart';
+import '../../features/admin/presentation/exercise_list_page.dart';
 import '../../features/admin/presentation/members_page.dart';
 import '../../features/auth/presentation/accept_invite_page.dart';
 import '../../features/auth/presentation/auth_controller.dart';
@@ -15,6 +17,7 @@ import '../../features/auth/presentation/register_page.dart';
 import '../../features/gym/data/gym_controller.dart';
 import '../../features/gym/data/gym_repository.dart';
 import '../../features/gym/presentation/create_gym_page.dart';
+import '../../features/trainer/presentation/trainer_dashboard_page.dart';
 import '../theme/app_colors.dart';
 import 'routes.dart';
 
@@ -52,15 +55,44 @@ class SessionState {
   int get hashCode => Object.hash(status, user?.uid, role, gymId, gymName);
 }
 
-/// Provider que busca o vínculo do usuário na coleção `user_memberships`.
-/// Substitui a busca antiga via collectionGroup, eliminando a necessidade de índices complexos.
 final myGymProvider = FutureProvider<MyGymMembershipData?>((ref) async {
   final authAsync = ref.watch(authStateChangesProvider);
   final user = authAsync.value;
   if (user == null) return null;
 
   final repo = ref.watch(gymRepositoryProvider);
-  return await repo.getMembershipDirect(user.uid);
+  final uid = user.uid;
+
+  // 1. Busca direto no atalho
+  var membership = await repo.getMembershipDirect(uid);
+  if (membership != null) return membership;
+
+  // 2. Fallback: se for admin e não tiver atalho, recria.
+  final gymsQuery = await FirebaseFirestore.instance
+      .collection('gyms')
+      .where('ownerUid', isEqualTo: uid)
+      .limit(1)
+      .get();
+
+  if (gymsQuery.docs.isNotEmpty) {
+    final gymDoc = gymsQuery.docs.first;
+    final gymData = gymDoc.data();
+    
+    await FirebaseFirestore.instance.collection('user_memberships').doc(uid).set({
+      'gymId': gymDoc.id,
+      'role': 'admin',
+      'gymName': gymData['name'] ?? 'Minha Academia',
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    return MyGymMembershipData(
+      gymId: gymDoc.id,
+      role: 'admin',
+      gymName: gymData['name'] ?? 'Minha Academia',
+    );
+  }
+
+  return null;
 });
 
 final sessionProvider = Provider<SessionState>((ref) {
@@ -112,14 +144,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: false,
     redirect: (context, state) {
       final location = state.matchedLocation;
-
       final isAuthRoute = location == Routes.login ||
           location == Routes.register ||
           location == Routes.forgotPassword;
       final isSplash = location == Routes.splash;
-      final isNoGymArea = location == Routes.noGym || 
-                          location == Routes.createGym ||
-                          location == Routes.acceptInvite;
+      final isNoGymArea = location == Routes.noGym ||
+          location == Routes.createGym ||
+          location == Routes.acceptInvite;
 
       if (session.status == SessionStatus.unknown) {
         return isSplash ? null : Routes.splash;
@@ -153,20 +184,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.noGym, builder: (context, state) => const NoGymPage()),
       GoRoute(path: Routes.createGym, builder: (context, state) => const CreateGymPage()),
       GoRoute(path: Routes.acceptInvite, builder: (context, state) => const AcceptInvitePage()),
-      
+
       // ROTAS DO ADMIN
       GoRoute(path: Routes.gymAdminHome, builder: (context, state) => const AdminDashboardPage()),
       GoRoute(
-        path: Routes.gymAdminMembers, 
+        path: Routes.gymAdminMembers,
         builder: (context, state) {
           final gymId = ref.read(sessionProvider).gymId ?? '';
           return MembersPage(gymId: gymId);
-        }
+        },
+      ),
+      GoRoute(
+        path: Routes.gymAdminExercises,
+        builder: (context, state) => const ExerciseListPage(),
       ),
 
-      // OUTROS PLACEHOLDERS
-      GoRoute(path: Routes.studentHome, builder: (context, state) => const PlaceholderPage(title: 'Área do aluno', description: 'ETAPA 7', icon: Icons.fitness_center)),
-      GoRoute(path: Routes.trainerHome, builder: (context, state) => const PlaceholderPage(title: 'Área do professor', description: 'ETAPA 8', icon: Icons.school)),
+      // ROTA DO PROFESSOR (Atualizada)
+      GoRoute(path: Routes.trainerHome, builder: (context, state) => const TrainerDashboardPage()),
+
+      // ROTAS DO ALUNO (Placeholder até a ETAPA 7)
+      GoRoute(path: Routes.studentHome, builder: (context, state) => const PlaceholderPage(title: 'Área do aluno', description: 'Aguarde a ETAPA 7', icon: Icons.fitness_center)),
       GoRoute(path: Routes.platformAdminHome, builder: (context, state) => const PlaceholderPage(title: 'Admin SaaS', description: 'ETAPA 10', icon: Icons.admin_panel_settings)),
     ],
     errorBuilder: (context, state) => const NotFoundPage(),

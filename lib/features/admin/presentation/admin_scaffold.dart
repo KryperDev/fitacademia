@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'members_page.dart';
+import 'exercise_list_page.dart';
 
 class AdminScaffold extends ConsumerWidget {
   final Widget child;
@@ -49,9 +50,7 @@ class AdminScaffold extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.dashboard),
               title: const Text('Dashboard'),
-              onTap: () {
-                Navigator.pop(context);
-              },
+              onTap: () => Navigator.pop(context),
             ),
             ListTile(
               leading: const Icon(Icons.group),
@@ -61,6 +60,17 @@ class AdminScaffold extends ConsumerWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => MembersPage(gymId: gymId)),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.fitness_center),
+              title: const Text('Exercícios'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ExerciseListPage()),
                 );
               },
             ),
