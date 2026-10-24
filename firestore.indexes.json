@@ -1,111 +1,40 @@
-﻿import ccxt
-import numpy as np
-import pandas as pd
-
-print(
-    "Baixando dados reais da Binance (BTC/USDT) para teste de 4 confilências..."
-)
-try:
-  exchange = ccxt.binance()
-  bars = exchange.fetch_ohlcv("BTC/USDT", timeframe="5m", limit=2000)
-  df = pd.DataFrame(
-      bars, columns=["timestamp", "open", "high", "low", "close", "volume"]
-  )
-  df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
-  df.set_index("timestamp", inplace=True)
-  print(f"Dados carregados! Total de candles: {len(df)}")
-except Exception as e:
-  print(f"Erro ao conectar na Binance: {e}")
-  exit()
-
-# 1. Cálculo dos Indicadores para as 4 Condições
-# - Tendência (EMA rápida vs Lenta)
-df["ema_9"] = df["close"].ewm(span=9, adjust=False).mean()
-df["ema_21"] = df["close"].ewm(span=21, adjust=False).mean()
-
-
-# - Momentum (RSI 14)
-def calculate_rsi(data, window=14):
-  delta = data.diff()
-  gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
-  loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-  rs = gain / loss
-  return 100 - (100 / (1 + rs))
-
-
-df["rsi"] = calculate_rsi(df["close"], 14)
-
-# - Contexto (Preço acima da EMA de 200 - Macro)
-df["ema_200"] = df["close"].ewm(span=200, adjust=False).mean()
-
-# - Volume (Volume atual acima da média de 20 períodos)
-df["vol_sma"] = df["volume"].rolling(window=20).mean()
-
-df.dropna(inplace=True)
-
-# 2. Validação das 4 Condições Independentes (True/False)
-# Condição 1: Tendência (EMA 9 acima da EMA 21)
-c_tendencia = df["ema_9"] > df["ema_21"]
-
-# Condição 2: Momentum (RSI em zona compradora saudável, entre 50 e 70)
-c_momentum = (df["rsi"] > 50) & (df["rsi"] < 70)
-
-# Condição 3: Contexto (Preço acima da média macro de 200 períodos)
-c_contexto = df["close"] > df["ema_200"]
-
-# Condição 4: Volume (Volume atual 20% superior à média)
-c_volume = df["volume"] > (df["vol_sma"] * 1.2)
-
-# Soma das condições confirmadas (0 a 4)
-df["score"] = (
-    c_tendencia.astype(int)
-    + c_momentum.astype(int)
-    + c_contexto.astype(int)
-    + c_volume.astype(int)
-)
-
-# O robô só gera sinal de compra se TODAS as 4 condições forem confirmadas (Score == 4)
-df["signal"] = 0
-df.loc[df["score"] == 4, "signal"] = 1
-
-# 3. Motor de Backtest
-trades = []
-tp_pct = 0.005  # 0.5% Alvo
-sl_pct = 0.0025  # 0.25% Stop Loss
-
-for i in range(len(df) - 20):
-  if df["signal"].iloc[i] == 1:
-    entry_price = df["close"].iloc[i]
-    tp = entry_price * (1 + tp_pct)
-    sl = entry_price * (1 - sl_pct)
-    result = "LOSS"
-
-    for j in range(i + 1, i + 15):
-      h = df["high"].iloc[j]
-      l = df["low"].iloc[j]
-      if l <= sl:
-        result = "LOSS"
-        break
-      if h >= tp:
-        result = "WIN"
-        break
-    trades.append(result)
-
-# 4. Exibição de Resultados
-print("\n" + "=" * 35)
-print("=== RESULTADO DA ESTRATÉGIA 4/4 CONDIÇÕES ===")
-print("=" * 35)
-if trades:
-  total = len(trades)
-  wins = trades.count("WIN")
-  win_rate = (wins / total) * 100
-  print(f"Total de Operações Encontradas: {total}")
-  print(f"Operações Vencedoras (WIN): {wins}")
-  print(f"Operações Perdedoras (LOSS): {total - wins}")
-  print(f"Taxa de Acerto (Win Rate): {win_rate:.2f}%")
-else:
-  print(
-      "Nenhuma operação atingiu 4/4 confirmações. (Isso é normal, pois o filtro"
-      " é extremamente rigoroso)."
-  )
-print("=" * 35)
+{
+  "indexes": [
+    {
+      "collectionGroup": "invites",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "code", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" },
+        { "fieldPath": "expiresAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "members",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "workoutPlans",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentUid", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "exercises",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
