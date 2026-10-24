@@ -1,6 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/routing/app_router.dart' show sessionProvider;
+import '../../../core/routing/app_router.dart' show sessionProvider, myGymProvider;
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -8,13 +8,34 @@ import '../../gym/data/gym_controller.dart';
 import '../data/workout_controller.dart';
 import 'plan_editor_page.dart';
 
-class TrainerDashboardPage extends ConsumerWidget {
+class TrainerDashboardPage extends ConsumerStatefulWidget {
   const TrainerDashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TrainerDashboardPage> createState() => _TrainerDashboardPageState();
+}
+
+class _TrainerDashboardPageState extends ConsumerState<TrainerDashboardPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Força a recarga do vínculo (gymId) ao abrir a tela
+    Future.microtask(() {
+      ref.invalidate(myGymProvider);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
     final gymId = session.gymId ?? '';
+
+    // Se o gymId ainda estiver vazio, mostra loading em vez de buscar dados errados
+    if (gymId.isEmpty) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
