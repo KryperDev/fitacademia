@@ -18,6 +18,7 @@ import '../../features/gym/data/gym_controller.dart';
 import '../../features/gym/data/gym_repository.dart';
 import '../../features/gym/presentation/create_gym_page.dart';
 import '../../features/trainer/presentation/trainer_dashboard_page.dart';
+import '../../features/student/presentation/student_dashboard_page.dart';
 import '../theme/app_colors.dart';
 import 'routes.dart';
 
@@ -203,7 +204,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.trainerHome, builder: (context, state) => const TrainerDashboardPage()),
 
       // ROTAS DO ALUNO (Placeholder até a ETAPA 7)
-      GoRoute(path: Routes.studentHome, builder: (context, state) => const PlaceholderPage(title: 'Área do aluno', description: 'Aguarde a ETAPA 7', icon: Icons.fitness_center)),
+      GoRoute(path: Routes.studentHome, builder: (context, state) => const StudentDashboardPage()),
       GoRoute(path: Routes.platformAdminHome, builder: (context, state) => const PlaceholderPage(title: 'Admin SaaS', description: 'ETAPA 10', icon: Icons.admin_panel_settings)),
     ],
     errorBuilder: (context, state) => const NotFoundPage(),
